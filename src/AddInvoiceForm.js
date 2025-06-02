@@ -1,45 +1,68 @@
-import React, { useState } from "react";
-import './App.css';
-const AddInvoiceForm = () => {
-  const [invoiceData, setInvoiceData] = useState({
-    invoiceNumber: "",
-    invoiceDate: "",
-    deliveryDate: "",
-    transporter: "",
-    docketNumber: "",
-    items: []
+import React, { useState } from 'react';
+
+export default function InvoiceForm() {
+  const [formData, setFormData] = useState({
+    invoiceNumber: '',
+    invoiceDate: '',
+    deliveryDate: '',
+    transporter: '',
+    docketNumber: '',
+    items: [
+      {
+        productCode: '',
+        quantity: 0,
+        imeis: ['']
+      }
+    ]
   });
 
-  const handleInvoiceChange = (e) => {
-    setInvoiceData({ ...invoiceData, [e.target.name]: e.target.value });
+  const handleMainChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
   };
 
-  const [items, setitems] = useState([
-    { productCode: '', quantity: '' },
-  ]);
-
   const handleItemChange = (index, e) => {
-    const updated = [...items];
-    updated[index][e.target.name] = e.target.value;
-    setitems(updated);
+    const { name, value } = e.target;
+    const items = [...formData.items];
+    items[index][name] = name === 'quantity' ? parseInt(value, 10) : value;
+    setFormData({ ...formData, items });
+  };
+
+  const handleImeiChange = (itemIndex, imeiIndex, e) => {
+    const items = [...formData.items];
+    items[itemIndex].imeis[imeiIndex] = e.target.value;
+    setFormData({ ...formData, items });
   };
 
   const addItem = () => {
-    setitems([...items, { productCode: '', quantity: '' }]);
+    setFormData({
+      ...formData,
+      items: [...formData.items, { productCode: '', quantity: 0, imeis: [''] }]
+    });
   };
 
   const removeItem = (index) => {
-    const updated = [...items];
-    updated.splice(index, 1);
-    setitems(updated);
+    const items = [...formData.items];
+    items.splice(index, 1);
+    setFormData({ ...formData, items });
+  };
+
+  const addImei = (index) => {
+    const items = [...formData.items];
+    items[index].imeis.push('');
+    setFormData({ ...formData, items });
+  };
+
+  const removeImei = (itemIndex, imeiIndex) => {
+    const items = [...formData.items];
+    items[itemIndex].imeis.splice(imeiIndex, 1);
+    setFormData({ ...formData, items });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    invoiceData.items = items;
-    const payload = invoiceData;
-    console.log('Payload:', payload);
+    const payload = formData;
+    console.log('Submitted JSON:', JSON.stringify(formData, null, 2));
   
     try {
       await fetch('https://script.google.com/macros/s/AKfycbwc_IPBuyRQgR9CPB9CVte-_wXnVIJ9LqcC0sPkBXSP-uoR-7l7dPbxUGMSjSjBWALu/exec', {
@@ -54,101 +77,56 @@ const AddInvoiceForm = () => {
       alert("Failed to submit invoice.");
     }
   };
+
   return (
-    <form onSubmit={handleSubmit}>
-  <h2>Add Invoice</h2>
+    <form onSubmit={handleSubmit} className="p-4 space-y-4">
+      <input name="invoiceNumber" placeholder="Invoice Number" value={formData.invoiceNumber} onChange={handleMainChange} className="border p-2 w-full" />
+      <input type="date" name="invoiceDate" value={formData.invoiceDate} onChange={handleMainChange} className="border p-2 w-full" />
+      <input type="date" name="deliveryDate" value={formData.deliveryDate} onChange={handleMainChange} className="border p-2 w-full" />
+      <input name="transporter" placeholder="Transporter" value={formData.transporter} onChange={handleMainChange} className="border p-2 w-full" />
+      <input name="docketNumber" placeholder="Docket Number" value={formData.docketNumber} onChange={handleMainChange} className="border p-2 w-full" />
 
-  <div>
-    <label htmlFor="invoiceNumber">Invoice Number:</label>
-    <input
-      id="invoiceNumber"
-      type="text"
-      name="invoiceNumber"
-      value={invoiceData.invoiceNumber}
-      onChange={handleInvoiceChange}
-    />
-  </div>
+      <h3 className="text-lg font-semibold mt-4">Items</h3>
 
-  <div>
-    <label htmlFor="invoiceDate">Invoice Date:</label>
-    <input
-      id="invoiceDate"
-      type="date"
-      name="invoiceDate"
-      value={invoiceData.invoiceDate}
-      onChange={handleInvoiceChange}
-    />
-  </div>
+      {formData.items.map((item, i) => (
+        <div key={i} className="border p-3 rounded shadow-sm space-y-2">
+          <input name="productCode" placeholder="Product Code" value={item.productCode} onChange={(e) => handleItemChange(i, e)} className="border p-2 w-full" />
+          <input type="number" name="quantity" placeholder="Quantity" value={item.quantity} onChange={(e) => handleItemChange(i, e)} className="border p-2 w-full" />
 
-  <div>
-    <label htmlFor="deliveryDate">Delivery Date:</label>
-    <input
-      id="deliveryDate"
-      type="date"
-      name="deliveryDate"
-      value={invoiceData.deliveryDate}
-      onChange={handleInvoiceChange}
-    />
-  </div>
+          <h4 className="font-medium">IMEIs</h4>
+          {item.imeis.map((imei, j) => (
+            <div key={j} className="flex space-x-2">
+              <input
+                value={imei}
+                onChange={(e) => handleImeiChange(i, j, e)}
+                className="border p-2 w-full"
+                placeholder={`IMEI ${j + 1}`}
+              />
+              {item.imeis.length > 1 && (
+                <button type="button" onClick={() => removeImei(i, j)} className="text-red-500">
+                  Remove
+                </button>
+              )}
+            </div>
+          ))}
+          <button type="button" onClick={() => addImei(i)} className="text-blue-500">+ Add IMEI</button>
 
-  <div>
-    <label htmlFor="transporter">Transporter:</label>
-    <input
-      id="transporter"
-      type="text"
-      name="transporter"
-      value={invoiceData.transporter}
-      onChange={handleInvoiceChange}
-    />
-  </div>
-
-  <div>
-    <label htmlFor="docketNumber">Docket Number:</label>
-    <input
-      id="docketNumber"
-      type="text"
-      name="docketNumber"
-      value={invoiceData.docketNumber}
-      onChange={handleInvoiceChange}
-    />
-  </div>
-
-  <h3>Items</h3>
-        {items.map((item, index) => (
-        <div key={index}>
-            <label htmlFor={`productCode-${index}`}>Product Code:</label>
-            <input
-            id={`productCode-${index}`}
-            type="text"
-            name="productCode"
-            placeholder="Product Code"
-            value={item.productCode}
-            onChange={(e) => handleItemChange(index, e)}
-            />
-
-            <p>  </p>
-            <label htmlFor={`quantity-${index}`}>Quantity:</label>
-            <input
-            id={`quantity-${index}`}
-            type="number"
-            name="quantity"
-            placeholder="Quantity"
-            value={item.quantity}
-            onChange={(e) => handleItemChange(index, e)}
-            />
-
-            <button type="button" onClick={() => removeItem(index)}>
-            Remove Item
-            </button>
+          {formData.items.length > 1 && (
+            <button type="button" onClick={() => removeItem(i)} className="text-red-500 mt-2">Remove Item</button>
+          )}
         </div>
-        ))}
-      <button type="button" onClick={addItem}>
-        Add Item
+      ))}
+
+      <button type="button" onClick={addItem} className="bg-blue-500 text-white px-4 py-2 rounded">
+        + Add Item
       </button>
+
       <br />
-      <button type="submit">Submit Invoice</button>
+
+      <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded">
+        Submit
+      </button>
     </form>
   );
-};
+}
 
-export default AddInvoiceForm;
