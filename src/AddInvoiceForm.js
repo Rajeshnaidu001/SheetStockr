@@ -1,7 +1,40 @@
-import React, { useState } from 'react';
+import React from 'react';
+import {
+  Box,
+  Button,
+  TextField,
+  IconButton,
+  Typography,
+  Paper,
+} from '@mui/material';
+import { FieldArray, Formik, Form } from 'formik';
+import * as Yup from 'yup';
+import { Add, Delete } from '@mui/icons-material';
+import { Container } from '@mui/material';
+
+const sheetUrl="https://script.google.com/macros/s/AKfycbwc_IPBuyRQgR9CPB9CVte-_wXnVIJ9LqcC0sPkBXSP-uoR-7l7dPbxUGMSjSjBWALu/exec"
+
+const validationSchema = Yup.object().shape({
+  invoiceNumber: Yup.string().required('Required'),
+  invoiceDate: Yup.date().required('Required'),
+  deliveryDate: Yup.date().required('Required'),
+  transporter: Yup.string().required('Required'),
+  docketNumber: Yup.string().required('Required'),
+  items: Yup.array()
+    .of(
+      Yup.object().shape({
+        productCode: Yup.string().required('Required'),
+        quantity: Yup.number().required('Required').min(1),
+        imeis: Yup.array()
+          .of(Yup.string().required('Required'))
+          .min(1, 'At least one IMEI required'),
+      })
+    )
+    .min(1, 'At least one item required'),
+});
 
 export default function InvoiceForm() {
-  const [formData, setFormData] = useState({
+  const initialValues = {
     invoiceNumber: '',
     invoiceDate: '',
     deliveryDate: '',
@@ -10,123 +43,211 @@ export default function InvoiceForm() {
     items: [
       {
         productCode: '',
-        quantity: 0,
-        imeis: ['']
-      }
-    ]
-  });
-
-  const handleMainChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+        quantity: '',
+        imeis: [],
+      },
+    ],
   };
 
-  const handleItemChange = (index, e) => {
-    const { name, value } = e.target;
-    const items = [...formData.items];
-    items[index][name] = name === 'quantity' ? parseInt(value, 10) : value;
-    setFormData({ ...formData, items });
-  };
-
-  const handleImeiChange = (itemIndex, imeiIndex, e) => {
-    const items = [...formData.items];
-    items[itemIndex].imeis[imeiIndex] = e.target.value;
-    setFormData({ ...formData, items });
-  };
-
-  const addItem = () => {
-    setFormData({
-      ...formData,
-      items: [...formData.items, { productCode: '', quantity: 0, imeis: [''] }]
-    });
-  };
-
-  const removeItem = (index) => {
-    const items = [...formData.items];
-    items.splice(index, 1);
-    setFormData({ ...formData, items });
-  };
-
-  const addImei = (index) => {
-    const items = [...formData.items];
-    items[index].imeis.push('');
-    setFormData({ ...formData, items });
-  };
-
-  const removeImei = (itemIndex, imeiIndex) => {
-    const items = [...formData.items];
-    items[itemIndex].imeis.splice(imeiIndex, 1);
-    setFormData({ ...formData, items });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const payload = formData;
-    console.log('Submitted JSON:', JSON.stringify(formData, null, 2));
-  
+  const handleSubmit = async (values) => {
+    console.log('Submitting form:', values);
     try {
-      await fetch('https://script.google.com/macros/s/AKfycbwc_IPBuyRQgR9CPB9CVte-_wXnVIJ9LqcC0sPkBXSP-uoR-7l7dPbxUGMSjSjBWALu/exec', {
+      await fetch(sheetUrl, {
         method: 'POST',
-        mode:"no-cors",
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        mode:"no-cors",
+        body: JSON.stringify(values),
       });
-      alert("Invoice submitted.");
+
+      alert('Form submitted successfully!');
     } catch (error) {
-      console.error("Submission error:", error);
-      alert("Failed to submit invoice.");
+      console.error('Error submitting form:', error);
+      alert('Submission failed.');
     }
   };
-
   return (
-    <form onSubmit={handleSubmit} className="p-4 space-y-4">
-      <input name="invoiceNumber" placeholder="Invoice Number" value={formData.invoiceNumber} onChange={handleMainChange} className="border p-2 w-full" />
-      <input type="date" name="invoiceDate" value={formData.invoiceDate} onChange={handleMainChange} className="border p-2 w-full" />
-      <input type="date" name="deliveryDate" value={formData.deliveryDate} onChange={handleMainChange} className="border p-2 w-full" />
-      <input name="transporter" placeholder="Transporter" value={formData.transporter} onChange={handleMainChange} className="border p-2 w-full" />
-      <input name="docketNumber" placeholder="Docket Number" value={formData.docketNumber} onChange={handleMainChange} className="border p-2 w-full" />
+    <Container maxWidth="md"> 
+    <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit} >
+      {({ values, errors, touched, handleChange }) => (
+        <Form autoComplete='off'>
+          <Box component={Paper} p={3} my={4}>
+            <Typography variant="h6">Invoice Details</Typography>
 
-      <h3 className="text-lg font-semibold mt-4">Items</h3>
+            <TextField
+              fullWidth
+              label="Invoice Number"
+              name="invoiceNumber"
+              value={values.invoiceNumber}
+              onChange={handleChange}
+              error={touched.invoiceNumber && Boolean(errors.invoiceNumber)}
+              helperText={touched.invoiceNumber && errors.invoiceNumber}
+              margin="normal"
+            />
+            <TextField
+              fullWidth
+              label="Invoice Date"
+              type="date"
+              name="invoiceDate"
+              value={values.invoiceDate}
+              onChange={handleChange}
+              error={touched.invoiceDate && Boolean(errors.invoiceDate)}
+              helperText={touched.invoiceDate && errors.invoiceDate}
+              InputLabelProps={{ shrink: true }}
+              margin="normal"
+            />
+            <TextField
+              fullWidth
+              label="Delivery Date"
+              type="date"
+              name="deliveryDate"
+              value={values.deliveryDate}
+              onChange={handleChange}
+              error={touched.deliveryDate && Boolean(errors.deliveryDate)}
+              helperText={touched.deliveryDate && errors.deliveryDate}
+              InputLabelProps={{ shrink: true }}
+              margin="normal"
+            />
+            <TextField
+              fullWidth
+              label="Transporter"
+              name="transporter"
+              value={values.transporter}
+              onChange={handleChange}
+              error={touched.transporter && Boolean(errors.transporter)}
+              helperText={touched.transporter && errors.transporter}
+              margin="normal"
+            />
+            <TextField
+              fullWidth
+              label="Docket Number"
+              name="docketNumber"
+              value={values.docketNumber}
+              onChange={handleChange}
+              error={touched.docketNumber && Boolean(errors.docketNumber)}
+              helperText={touched.docketNumber && errors.docketNumber}
+              margin="normal"
+            />
+          </Box>
 
-      {formData.items.map((item, i) => (
-        <div key={i} className="border p-3 rounded shadow-sm space-y-2">
-          <input name="productCode" placeholder="Product Code" value={item.productCode} onChange={(e) => handleItemChange(i, e)} className="border p-2 w-full" />
-          <input type="number" name="quantity" placeholder="Quantity" value={item.quantity} onChange={(e) => handleItemChange(i, e)} className="border p-2 w-full" />
+          <FieldArray name="items">
+            {({ push, remove }) => (
+              <Box>
+                {/* <Typography variant="h6">Items</Typography> */}
+                {values.items.map((item, index) => (
+                  <Box key={index} component={Paper} p={3} my={2}>
+                    <Typography variant="h6">Items</Typography>
+                    <TextField
+                      fullWidth
+                      label="Product Code"
+                      name={`items[${index}].productCode`}
+                      value={item.productCode}
+                      onChange={handleChange}
+                      error={
+                        touched.items?.[index]?.productCode &&
+                        Boolean(errors.items?.[index]?.productCode)
+                      }
+                      helperText={
+                        touched.items?.[index]?.productCode &&
+                        errors.items?.[index]?.productCode
+                      }
+                      margin="normal"
+                    />
+                    <TextField
+                      fullWidth
+                      label="Quantity"
+                      type="number"
+                      name={`items[${index}].quantity`}
+                      value={item.quantity}
+                      onChange={handleChange}
+                      error={
+                        touched.items?.[index]?.quantity &&
+                        Boolean(errors.items?.[index]?.quantity)
+                      }
+                      helperText={
+                        touched.items?.[index]?.quantity &&
+                        errors.items?.[index]?.quantity
+                      }
+                      margin="normal"
+                    />
 
-          <h4 className="font-medium">IMEIs</h4>
-          {item.imeis.map((imei, j) => (
-            <div key={j} className="flex space-x-2">
-              <input
-                value={imei}
-                onChange={(e) => handleImeiChange(i, j, e)}
-                className="border p-2 w-full"
-                placeholder={`IMEI ${j + 1}`}
-              />
-              {item.imeis.length > 1 && (
-                <button type="button" onClick={() => removeImei(i, j)} className="text-red-500">
-                  Remove
-                </button>
-              )}
-            </div>
-          ))}
-          <button type="button" onClick={() => addImei(i)} className="text-blue-500">+ Add IMEI</button>
+                    <FieldArray name={`items[${index}].imeis`}>
+                      {({ push, remove }) => (
+                        <Box>
+                          <Typography variant="subtitle1">IMEIs</Typography>
+                          {item.imeis.map((imei, j) => (
+                            <Box key={j} display="flex" alignItems="center" gap={1} mb={1}>
+                              <TextField
+                                fullWidth
+                                label={`IMEI ${j + 1}`}
+                                name={`items[${index}].imeis[${j}]`}
+                                value={imei}
+                                onChange={handleChange}
+                                error={
+                                  touched.items?.[index]?.imeis?.[j] &&
+                                  Boolean(errors.items?.[index]?.imeis?.[j])
+                                }
+                                helperText={
+                                  touched.items?.[index]?.imeis?.[j] &&
+                                  errors.items?.[index]?.imeis?.[j]
+                                }
+                              />
+                              
+                              {item.imeis.length > 1 && (
+                                <IconButton onClick={() => remove(j)} color="error">
+                                  <Delete />
+                                </IconButton>
+                              )}
+                            </Box>
+                          ))}
+                          <Button
+                            type="button"
+                            variant="outlined"
+                            startIcon={<Add />}
+                            onClick={() => push('')}
+                          >
+                            Add IMEI
+                          </Button>
+                        </Box>
+                      )}
+                    </FieldArray>
 
-          {formData.items.length > 1 && (
-            <button type="button" onClick={() => removeItem(i)} className="text-red-500 mt-2">Remove Item</button>
-          )}
-        </div>
-      ))}
+                    <Box mt={2}>
+                      {values.items.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="contained"
+                          color="error"
+                          startIcon={<Delete />}
+                          onClick={() => remove(index)}
+                        >
+                          Remove Item
+                        </Button>
+                      )}
+                    </Box>
+                  </Box>
+                ))}
+                <Button
+                  type="button"
+                  variant="contained"
+                  onClick={() =>
+                    push({ productCode: '', quantity: '', imeis: [''] })
+                  }
+                  startIcon={<Add />}
+                >
+                  Add Item
+                </Button>
+              </Box>
+            )}
+          </FieldArray>
 
-      <button type="button" onClick={addItem} className="bg-blue-500 text-white px-4 py-2 rounded">
-        + Add Item
-      </button>
-
-      <br />
-
-      <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded">
-        Submit
-      </button>
-    </form>
+          <Box mt={3}>
+            <Button type="submit" variant="contained" color="primary">
+              Submit Form
+            </Button>
+          </Box>
+        </Form>
+      )}
+    </Formik>
+    </Container>
   );
 }
-
