@@ -1,8 +1,8 @@
 {
   "files": {
-    "main.js": "/stock-entry/static/js/main.a60928fb.js",
-    "index.html": "/stock-entry/index.html",
-    "main.a60928fb.js.map": "/stock-entry/static/js/main.a60928fb.js.map"
+    "main.js": "/SheetStockr/static/js/main.a60928fb.js",
+    "index.html": "/SheetStockr/index.html",
+    "main.a60928fb.js.map": "/SheetStockr/static/js/main.a60928fb.js.map"
   },
   "entrypoints": [
     "static/js/main.a60928fb.js"
