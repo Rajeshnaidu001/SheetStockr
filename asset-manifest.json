@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.js": "/SheetStockr/static/js/main.a60928fb.js",
+    "main.js": "/SheetStockr/static/js/main.5903f6f9.js",
     "index.html": "/SheetStockr/index.html",
-    "main.a60928fb.js.map": "/SheetStockr/static/js/main.a60928fb.js.map"
+    "main.5903f6f9.js.map": "/SheetStockr/static/js/main.5903f6f9.js.map"
   },
   "entrypoints": [
-    "static/js/main.a60928fb.js"
+    "static/js/main.5903f6f9.js"
   ]
 }
