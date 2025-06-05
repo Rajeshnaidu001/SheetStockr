@@ -287,11 +287,13 @@ export default function InvoiceTable() {
                   <TableCell>
                     <IconButton
                       color="primary"
-                      onClick={() =>
+                      onClick={() =>{
+                        
+                        alert("Invoice Number Should Match!!!");
                         navigate("/add", {
                           state: { editMode: true, formData: row },
                         })
-                      }
+                      }}
                     >
                       <Edit />
                     </IconButton>
